@@ -7,18 +7,23 @@ FAILURE=""
 
 for dir in `ls` ; do
     if [ -x $dir/test.sh ] ; then
-	echo Executing test in $dir
+	echo Executing test in $dir | tee -a $TEST_LOG_DIR/out
 	cd $dir
-	./test.sh 2>&1 >../$TEST_LOG_DIR/out_$dir
+	./test.sh 2>&1 | tee ../$TEST_LOG_DIR/out_$dir
 	if [ $? -eq 0 ] ; then
-	    echo Test successful;
+	    echo Test successful | tee -a ../$TEST_LOG_DIR/out
 	else
-	    echo Test failed;
+	    echo Test failed  | tee -a ../$TEST_LOG_DIR/out
 	    FAILURE="One or more tests failed"
 	fi
 	cd ..
     fi
 done
 
-
-echo $FAILURE
+if [ -z "$FAILURE" ] ; then
+    echo All tests successful
+    exit 0
+else
+    echo $FAILURE
+    exit 1
+fi
