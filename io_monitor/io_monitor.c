@@ -113,6 +113,12 @@ static int paused = 0;
 static int have_elapsed_threshold = 0;
 static double elapsed_threshold = 0.0;
 
+// variables used for time-based sampling
+static int time_based_sampling = 1;
+static int within_time_based_sample = 0;
+static unsigned long start_time_based_sample = 0L;
+static unsigned long time_based_sample_duration = 2L;
+static unsigned long time_based_sample_frequency = 10L;
 
 void load_library_functions();
 
@@ -421,6 +427,45 @@ void record(DOMAIN_TYPE dom_type,
    }
 
    timestamp = (unsigned long)time(NULL);
+
+   if (time_based_sampling) {
+      if (0L == start_time_based_sample) {
+         // this is our first sample
+         start_time_based_sample = timestamp;
+         within_time_based_sample = 1;
+      } else {
+         if (within_time_based_sample) {
+            // we're in sampling mode
+            // time to turn off?
+            const unsigned long turn_off_time =
+               start_time_based_sample + time_based_sample_duration; 
+            if (timestamp >= turn_off_time) {
+               // turn on time-based sample
+               within_time_based_sample = 0;
+            } else {
+               // we're in middle of time-based sample, but we haven't
+               // reached the sample duration yet
+            }
+         } else {
+            // we're not sampling
+            // time to turn on?
+            const unsigned long turn_on_time =
+               start_time_based_sample + time_based_sample_frequency;
+            if (timestamp >= turn_on_time) {
+               // turn on time-based sample
+               within_time_based_sample = 1;
+               start_time_based_sample = timestamp;
+            } else {
+               // not yet time to turn on
+            }
+         }
+
+         if (!within_time_based_sample) {
+            return;
+         }
+      }
+   }
+
    pid = getpid();
 
    bzero(&record_output, sizeof(record_output));
