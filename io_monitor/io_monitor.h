@@ -48,6 +48,8 @@ static const char* ENV_MESSAGE_QUEUE_PATH = "MESSAGE_QUEUE_PATH";
 static const char* ENV_START_ON_OPEN = "START_ON_OPEN";
 static const char* ENV_MONITOR_DOMAINS = "MONITOR_DOMAINS";
 static const char* ENV_START_ON_ELAPSED = "START_ON_ELAPSED";
+static const char* ENV_TIME_SAMPLE_FREQUENCY = "TIME_SAMPLE_FREQUENCY";
+static const char* ENV_TIME_SAMPLE_DURATION = "TIME_SAMPLE_DURATION";
 
 #define CHECK_LOADED_FNS() \
 if (NULL == orig_open) initialize_monitor();

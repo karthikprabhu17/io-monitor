@@ -114,7 +114,7 @@ static int have_elapsed_threshold = 0;
 static double elapsed_threshold = 0.0;
 
 // variables used for time-based sampling
-static int time_based_sampling = 1;
+static int time_based_sampling = 0;
 static int within_time_based_sample = 0;
 static unsigned long start_time_based_sample = 0L;
 static unsigned long time_based_sample_duration = 2L;
@@ -231,6 +231,22 @@ void initialize_monitor() {
    } else {
       // by default, don't record anything
       domain_bit_flags = 0;
+   }
+
+   // check for time sampling parameters
+   const char* env_time_sample_frequency = getenv(ENV_TIME_SAMPLE_FREQUENCY);
+   const char* env_time_sample_duration = getenv(ENV_TIME_SAMPLE_DURATION);
+   if ((env_time_sample_frequency != NULL) &&
+       (env_time_sample_duration != NULL) &&
+       (strlen(env_time_sample_frequency) > 0) &&
+       (strlen(env_time_sample_duration) > 0)) {
+      unsigned long frequency = atol(env_time_sample_frequency);
+      unsigned long duration = atol(env_time_sample_duration);
+      if ((frequency > 0L) && (duration > 0L)) {
+         time_based_sampling = 1;
+         time_based_sample_frequency = frequency;
+         time_based_sample_duration = duration;
+      }
    }
 
    load_library_functions();
