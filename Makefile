@@ -73,7 +73,7 @@ mq_listener/mq_listener: $(mq_listener_objs)
 #build sample plugin
 plugins/input_cli.so: plugins/input_cli.c $(headers)
 	@echo -n  "generating plugin $@ ... "
-	cd plugins ; gcc $(CFLAGS) -lpthread -shared -fPIC ../$< -o ../$@
+	@cd plugins ; gcc $(CFLAGS) -lpthread -shared -fPIC ../$< -o ../$@
 	@echo OK
 
 plugins/%.so: plugins/%.c $(headers)

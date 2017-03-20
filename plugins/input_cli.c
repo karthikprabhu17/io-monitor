@@ -56,6 +56,7 @@ int open_plugin(const char* plugin_config, struct listener * listener)
 
 void close_plugin()
 {
+  puts("Close request received; joining thread");
   kill_thread = 1;
   pthread_join(input_thread, NULL);
 }

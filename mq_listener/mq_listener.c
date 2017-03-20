@@ -35,12 +35,12 @@
 static const int MESSAGE_QUEUE_PROJECT_ID = 'm';
 
 int c_mq_path(const char* name, const char** args);
-
 int c_load_plugin(const char* name, const char** args);
-
 int c_config(const char* name, const char** args);
-
 int c_help(const char* name, const char** args);
+int c_unload_plugin(const char* name, const char** args);
+int c_reorder_plugins(const char* name, const char** args);
+int c_quit(const char* name, const char** args);
 
 struct command commands[] =
   {
@@ -52,6 +52,19 @@ struct command commands[] =
      " may want to unload one of them)."
      " After that you may supply parameter string for your plugin.",
      c_load_plugin,0},
+    {"unload-plugin", "u",
+     "<plugin-library-path or alias>",
+     "remove plugin from running image of mq_listener",
+     c_unload_plugin,1},
+    {"reorder-plugins", "r",
+     "<comma separated list of plugins, referred to by paths or aliases>",
+     "It is required to give exhaustive list of all plugins that are loaded; otherwise "
+     "command will be rejected",
+     c_reorder_plugins,1},
+    {"quit", "q",
+     "",
+     "exit instance of mq_listener",
+     c_quit, 1},
     {"mq-path", "m",
      "<path>",
      "Select message queue file. This parameter is mandatory unless config file is used",
@@ -71,6 +84,7 @@ struct command commands[] =
 //*****************************************************************************
 int input_loop();
 
+int show_runtime_commands = 0;
 int message_queue_key = -1;
 int message_queue_id = -1;
 
@@ -86,6 +100,7 @@ int main(int argc, char** argv)
 	      "via config file or via --mq-path/-m command line option\n");
       return 1;
     }
+    show_runtime_commands = 1;
     return input_loop();
   }
   
@@ -195,8 +210,16 @@ int c_help(const char* name, const char** args)
   puts("   ./mq_listener/mq_listener -m mq1 -p plugins/output_table.so");
   puts("   ./mq_listener/mq_listener -c mq_listener/listener.conf.example");
   for (i = 0; commands[i].command_function; ++i) {
+    if (commands[i].interactive_only && !show_runtime_commands)
+      continue;
+
+    if (show_runtime_commands) {
+      printf("%s (%s) %s\n", commands[i].name,
+	     commands[i].short_name, commands[i].params_desc);
+    } else {
       printf("--%s / -%s %s\n", commands[i].name,
 	     commands[i].short_name, commands[i].params_desc);
+    }
       printf("     %s\n", commands[i].help);
   }
   return 0;
@@ -204,3 +227,22 @@ int c_help(const char* name, const char** args)
 
 //*****************************************************************************
 
+int c_unload_plugin(const char* name, const char** args)
+{
+}
+
+//*****************************************************************************
+
+int c_reorder_plugins(const char* name, const char** args)
+{
+
+}
+
+//*****************************************************************************
+
+int c_quit(const char* name, const char** args)
+{
+  puts("quitting");
+  unload_all_plugins();
+  exit(1);
+}

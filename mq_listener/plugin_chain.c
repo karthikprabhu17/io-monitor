@@ -69,7 +69,7 @@ void unload_all_plugins() {
   while (plugins) {
     plugins->pfn_close_plugin();
     dlclose(plugins->plugin_handle);
-    printf("Closed plugin %s", plugins->plugin_library);
+    printf("Closed plugin %s\n", plugins->plugin_library);
     plugins = plugins->next_plugin;
   }
 }
