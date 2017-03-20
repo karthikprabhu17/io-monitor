@@ -40,8 +40,8 @@ void *thread_loop(void* param)
     fflush(stdout);
     fgets(buf, PATH_MAX, stdin);
     listener->command_function(buf);
-
   }
+  puts("quitting mq_listener cli");
 }
 
 //*****************************************************************************
@@ -59,6 +59,7 @@ void close_plugin()
   puts("Close request received; joining thread");
   kill_thread = 1;
   pthread_join(input_thread, NULL);
+  puts("Joined");
 }
 
 //*****************************************************************************

@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <pthread.h>
+
 #include "domains.h"
 #include "ops.h"
 #include "ops_names.h"
@@ -31,6 +33,12 @@
 #include "plugin_chain.h"
 #include "command_parser.h"
 
+/* global mutex for plugin items, to prevent plugin chain alteration from happening
+ * during plugin execution */
+pthread_mutex_t plugin_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#define plugins_lock() pthread_mutex_lock(&plugin_mutex)
+#define plugins_unlock() pthread_mutex_unlock(&plugin_mutex)
 
 struct plugin_chain* plugins = NULL;
 
@@ -43,6 +51,7 @@ int execute_plugin_chain(struct monitor_record_t *rec)
 {
   struct plugin_chain* p = plugins;
   int rc_plugin;
+  plugins_lock();
   while (p) {
     if (p->plugin_paused) {
       rc_plugin = p->pfn_ok_to_accept_data();
@@ -57,11 +66,13 @@ int execute_plugin_chain(struct monitor_record_t *rec)
 	p->plugin_paused = 1;
       }
       if (rc_plugin == PLUGIN_DROP_DATA) {
+	plugins_unlock();
 	return 0;
       }
     }
     p = p->next_plugin;
   }
+  plugins_unlock();
   return 0;
 }
 
@@ -73,19 +84,21 @@ int execute_plugin_chain(struct monitor_record_t *rec)
 void unload_plugin(struct plugin_chain* p)
 {
   p->pfn_close_plugin();
-  dlclose(p->plugin_handle);
   printf("Closed plugin %s\n", p->plugin_library);
+  dlclose(p->plugin_handle);
   free((char*)p->plugin_library);
   if (p->plugin_options)
     free((char*)p->plugin_options);
 }
 
 void unload_all_plugins() {
+  plugins_lock();
   while (plugins) {
     unload_plugin(plugins);
     plugins = plugins->next_plugin;
   }
   plugins = NULL;
+  plugins_unlock();
 }
 
 /**
@@ -146,21 +159,26 @@ int unload_plugin_by_name(const char* name)
 {
   struct plugin_chain* p = locate_plugin_by_name(name);
   struct plugin_chain* i = plugins;
+  plugins_lock();
   unload_plugin(p);
   if (plugins==p) {
     plugins=p->next_plugin;
     free(p);
+    plugins_unlock();
     return 0;
   } else {
     while (i) {
       if (i->next_plugin == p) {
 	i->next_plugin = p->next_plugin;
 	free(p);
+        plugins_unlock();
 	return 0;
       }
+      i = i->next_plugin;
     } /*while*/
     fprintf(stderr, "Failed to correctly unload plugin."
 	    " This is likely a bug. mq_listener will now quit.");
+    plugins_unlock();
     return 1;
   }
 }
@@ -208,6 +226,7 @@ int load_plugin(const char* library, const char* options, const char* alias)
     return 1;
   }
 
+  plugins_lock();
   if (plugins) {
     struct plugin_chain* tmp = plugins;
     while (tmp->next_plugin)
@@ -216,6 +235,7 @@ int load_plugin(const char* library, const char* options, const char* alias)
   } else {
     plugins=new_plugin;
   }
+  plugins_unlock();
   
   return 0;
 }
