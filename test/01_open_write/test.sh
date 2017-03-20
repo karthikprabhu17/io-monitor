@@ -25,7 +25,7 @@ function run_case
     LD_PRELOAD=`pwd`/../../io_monitor/io_monitor.so MESSAGE_QUEUE_PATH=`pwd`/mq1 MONITOR_DOMAINS=$2 ./a.out
 
     #kill listener
-    sleep .1
+    sleep 1
     kill -9 `pgrep mq_listener` 
     
     #verify side effects of functions
