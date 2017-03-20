@@ -113,6 +113,11 @@ static int paused = 0;
 static int have_elapsed_threshold = 0;
 static double elapsed_threshold = 0.0;
 
+// variables for count-based sampling only
+static int count_sampling = 0;
+static int count_sampling_once_per = 10;  // 1 monitor record for every 10 received
+static int intercepts_since_last_report = 0;
+
 
 void load_library_functions();
 
@@ -418,6 +423,14 @@ void record(DOMAIN_TYPE dom_type,
 
    if (paused) {
       return;
+   }
+
+   if (count_sampling) {
+      intercepts_since_last_report++;
+      if (intercepts_since_last_report < count_sampling_once_per) {
+         return;
+      }
+      intercepts_since_last_report = 0;
    }
 
    timestamp = (unsigned long)time(NULL);
