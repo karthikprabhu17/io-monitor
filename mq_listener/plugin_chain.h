@@ -19,4 +19,11 @@ int execute_plugin_chain(struct monitor_record_t *rec);
 void unload_all_plugins();
 
 int load_plugin(const char* library, const char* options, const char* alias);
+
+int unload_plugin_by_name(const char* name);
+
+int reorder_plugins(const char** names);
+
+/* result is malloc-allocated; it is responsibility of caller to free it */
+const char** list_plugins();
 #endif

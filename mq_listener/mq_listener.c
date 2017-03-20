@@ -40,6 +40,7 @@ int c_config(const char* name, const char** args);
 int c_help(const char* name, const char** args);
 int c_unload_plugin(const char* name, const char** args);
 int c_reorder_plugins(const char* name, const char** args);
+int c_list_plugins(const char* name, const char** args);
 int c_quit(const char* name, const char** args);
 
 struct command commands[] =
@@ -61,6 +62,9 @@ struct command commands[] =
      "It is required to give exhaustive list of all plugins that are loaded; otherwise "
      "command will be rejected",
      c_reorder_plugins,1},
+    {"list-plugins", "l","",
+     "list currently loaded plugins",
+     c_list_plugins,1},
     {"quit", "q",
      "",
      "exit instance of mq_listener",
@@ -229,6 +233,12 @@ int c_help(const char* name, const char** args)
 
 int c_unload_plugin(const char* name, const char** args)
 {
+  if (args[0]) {
+    return unload_plugin_by_name(args[0]);
+  } else {
+    fprintf(stderr, "Argument missing: name of plugin (path or alias).\n");
+    return 1;
+  }
 }
 
 //*****************************************************************************
@@ -236,6 +246,16 @@ int c_unload_plugin(const char* name, const char** args)
 int c_reorder_plugins(const char* name, const char** args)
 {
 
+}
+//*****************************************************************************
+
+int c_list_plugins(const char* name, const char** args)
+{
+  const char** list_of_plugins = 
+    list_plugins();
+  int i;
+  for (i = 0 ; list_of_plugins[i]; ++i)
+    printf("%d. %s\n", i, list_of_plugins[i]);
 }
 
 //*****************************************************************************

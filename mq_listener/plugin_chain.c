@@ -65,14 +65,106 @@ int execute_plugin_chain(struct monitor_record_t *rec)
   return 0;
 }
 
+/**
+ * function unloads plugin so and all allocated resources but it 
+ * does not remove plugin from the linked list. It is responsibility
+ * of caller and it is requirement to do so 
+ */
+void unload_plugin(struct plugin_chain* p)
+{
+  p->pfn_close_plugin();
+  dlclose(p->plugin_handle);
+  printf("Closed plugin %s\n", p->plugin_library);
+  free((char*)p->plugin_library);
+  if (p->plugin_options)
+    free((char*)p->plugin_options);
+}
+
 void unload_all_plugins() {
   while (plugins) {
-    plugins->pfn_close_plugin();
-    dlclose(plugins->plugin_handle);
-    printf("Closed plugin %s\n", plugins->plugin_library);
+    unload_plugin(plugins);
     plugins = plugins->next_plugin;
   }
+  plugins = NULL;
 }
+
+/**
+ * returns number of currently loaded plugins
+ */
+int count_plugins()
+{
+  struct plugin_chain* p = plugins;
+  int num_plugins = 0;
+  char** result;
+  
+  while (p) {
+    num_plugins++;
+    p=p->next_plugin;
+  }
+  return num_plugins;
+}
+
+const char** list_plugins()
+{
+  struct plugin_chain* p = plugins;
+  int num_plugins = count_plugins();
+  char** result;
+  
+  result = calloc(sizeof(char*), num_plugins+1);
+  if (!result)
+    return 0;
+
+  p = plugins;
+  num_plugins = 0;
+  while (p) {
+    result[num_plugins] = (char*)p->plugin_library;
+    num_plugins++;
+    p=p->next_plugin;
+  }
+  return (const char**)result;
+}
+
+/* Name of plugin can be either its alias or 
+ * library path;
+ */
+struct plugin_chain* locate_plugin_by_name(const char* name)
+{
+  struct plugin_chain* p = plugins;
+  char** result;
+  
+  while (p) {
+    if (strcmp(name, p->plugin_library)) {
+      p = p->next_plugin;
+    } else {
+      return p;
+    }
+  }
+  return 0;  
+}
+
+int unload_plugin_by_name(const char* name)
+{
+  struct plugin_chain* p = locate_plugin_by_name(name);
+  struct plugin_chain* i = plugins;
+  unload_plugin(p);
+  if (plugins==p) {
+    plugins=p->next_plugin;
+    free(p);
+    return 0;
+  } else {
+    while (i) {
+      if (i->next_plugin == p) {
+	i->next_plugin = p->next_plugin;
+	free(p);
+	return 0;
+      }
+    } /*while*/
+    fprintf(stderr, "Failed to correctly unload plugin."
+	    " This is likely a bug. mq_listener will now quit.");
+    return 1;
+  }
+}
+
 
 int load_plugin(const char* library, const char* options, const char* alias)
 {
@@ -80,8 +172,8 @@ int load_plugin(const char* library, const char* options, const char* alias)
   if (!new_plugin) {
     return 1;
   }
-  new_plugin->plugin_library = library;
-  new_plugin->plugin_options = options;
+  new_plugin->plugin_library = strdup(library);
+  new_plugin->plugin_options = options? strdup(options) : NULL;
   new_plugin->plugin_handle = dlopen(new_plugin->plugin_library, RTLD_NOW);
   if (NULL == new_plugin->plugin_handle) {
     printf("error: unable to open plugin library '%s'\n",
