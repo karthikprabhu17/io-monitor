@@ -32,10 +32,40 @@ struct listener {
 };
 /* plugin needs to expose at least following four functions */
 
+/* each plugin _must_ provide following four entry points */
+
+/* function open_plugin adhering to prototype below:
+ * will be called immediately on plugin open */
 typedef int (*PFN_OPEN_PLUGIN)(const char*, struct listener *);
+
+/* function close_plugin adhering to prototype below:
+ * will be called immediately on plugin open */
 typedef void (*PFN_CLOSE_PLUGIN)();
+
+/* function ok_to_accept_data adhering to prototype below:
+ * will be called periodically after plugin responded
+ * PLUGIN_REFUSE_DATA to process_data */
 typedef int (*PFN_OK_TO_ACCEPT_DATA)();
+
+/* function process_data adhering to prototype below:
+ * will be called once per every incoming datapoint */
 typedef int (*PFN_PROCESS_DATA)(struct monitor_record_t*);
+
+/* plugin may (this is however optional) expose following function
+ * in addition to functions mentioned above */
+
+/* function plugin_command adhering to prototype below: 
+ * commands may be used to alter behavior of plugin. I.e. if it is filter plugin, 
+ * filtering scope can be changed and if it is an output plugin, format can be adjusted */
+typedef int (*PFN_PLUGIN_COMMAND)(const char* name, const char** args);
+
+/* function returning list of commands supported by plugin */
+typedef char** (*PFN_LIST_COMMANDS)();
+
+/* note, it is advisable that if plugin supports commands,
+ * one of commands supported is help, giving brief description of plugin and
+ * its available commands. Even if plugin doesn't expose any commands that
+ * alter its behavior, it is good to expose help command */
 
 /*
 int open_plugin(const char* plugin_config);
