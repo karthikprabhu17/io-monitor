@@ -112,13 +112,14 @@ of operations as one (e.g., to enable/disable monitoring).
 
 ## Environment Variables
 
-| Variable           | Required? | Description |
-| ------             | --------- | ----------- |
-| FACILITY_ID        | N         | Identifies the component. defaults to 'u' |
-| MESSAGE_QUEUE_PATH | Y         | File path of existing file associated with SysV message queue |
-| MONITOR_DOMAINS    | Y         | list of comma-separated domains to monitor or 'ALL' |
-| START_ON_OPEN      | N         | starts paused, resumes on open of specified file |
-| START_ON_ELAPSED   | N         | starts paused, resumes on elapsed time crossing specified threshold |
+| Variable               | Required? | Description |
+| ------                 | --------- | ----------- |
+| FACILITY_ID            | N         | Identifies the component. defaults to 'u' |
+| MESSAGE_QUEUE_PATH     | Y         | File path of existing file associated with SysV message queue |
+| MONITOR_DOMAINS        | Y         | list of comma-separated domains to monitor or 'ALL' |
+| START_ON_OPEN          | N         | starts paused, resumes on open of specified file |
+| START_ON_ELAPSED       | N         | starts paused, resumes on elapsed time crossing specified threshold |
+| COUNT_SAMPLE_FREQUENCY | N | specifies count-based sample frequency |
 
 ## System requirements
 
