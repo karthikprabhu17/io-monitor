@@ -33,7 +33,7 @@ unsigned int domain_bit_flags = -1;
 int open_plugin(const char* plugin_config)
 {
   domain_bit_flags=domain_list_to_bit_mask(plugin_config);
-   return PLUGIN_OPEN_SUCCESS;
+  return PLUGIN_OPEN_SUCCESS;
 }
 
 //*****************************************************************************
@@ -59,6 +59,39 @@ int process_data(struct monitor_record_t* data)
    } else { 
      return PLUGIN_ACCEPT_DATA;
    }
+}
+
+//*****************************************************************************
+
+char **list_commands()
+{
+  static const char* command_list[] =
+    {"update-mask", "print-mask", "help", 0};
+  return (char**)command_list;
+}
+
+//*****************************************************************************
+
+int plugin_command(const char* name, const char** args)
+{
+  printf("%s|%s|\n", name, args[0]);
+  if (args[0] && !strcmp(args[0], "update-mask") && args[1]) {
+    domain_bit_flags=domain_list_to_bit_mask(args[1]);
+  } else if (args[0] && !strcmp(args[0], "print-mask")) {
+
+    int j = 0;
+    unsigned int m = domain_bit_flags;
+    for (j = 0 ; m ; j++) {
+      unsigned int i = 1 << j;
+      if (i&m) {
+	printf("%s", domains_names[j]);
+	m&= ~i;
+	if(m)
+	  putchar(',');
+      }
+    }
+    putchar('\n');
+  }
 }
 
 //*****************************************************************************

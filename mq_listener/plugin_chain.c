@@ -89,6 +89,8 @@ void unload_plugin(struct plugin_chain* p)
   free((char*)p->plugin_library);
   if (p->plugin_options)
     free((char*)p->plugin_options);
+  if (p->plugin_alias)
+    free((char*)p->plugin_alias);
 }
 
 void unload_all_plugins() {
@@ -117,7 +119,7 @@ int count_plugins()
   return num_plugins;
 }
 
-const char** list_plugins()
+char** list_plugins()
 {
   struct plugin_chain* p = plugins;
   int num_plugins = count_plugins();
@@ -130,11 +132,22 @@ const char** list_plugins()
   p = plugins;
   num_plugins = 0;
   while (p) {
-    result[num_plugins] = (char*)p->plugin_library;
+    int s = strlen(p->plugin_library);
+    if (p->plugin_alias) {
+      s += 1 + strlen(p->plugin_alias);
+    }
+
+    result[num_plugins] = malloc(s);
+    strcpy(result[num_plugins], (char*)p->plugin_library);
+    /* append alias if applicable */
+    if (p->plugin_alias) {
+      sprintf(result[num_plugins] + strlen(p->plugin_library),
+	      ":%s", p->plugin_alias);
+    }
     num_plugins++;
     p=p->next_plugin;
   }
-  return (const char**)result;
+  return result;
 }
 
 /* Name of plugin can be either its alias or 
@@ -146,10 +159,11 @@ struct plugin_chain* locate_plugin_by_name(const char* name)
   char** result;
   
   while (p) {
-    if (strcmp(name, p->plugin_library)) {
-      p = p->next_plugin;
-    } else {
+    if (!strcmp(name, p->plugin_library)
+	|| (p->plugin_alias && !strcmp(p->plugin_alias, name))) {
       return p;
+    } else {
+      p = p->next_plugin;
     }
   }
   return 0;  
@@ -161,12 +175,15 @@ int unload_plugin_by_name(const char* name)
   struct plugin_chain* i = plugins;
   plugins_lock();
   unload_plugin(p);
+  /* unlink plugin from the list */
   if (plugins==p) {
+    /* case when it's head (replace head) */
     plugins=p->next_plugin;
     free(p);
     plugins_unlock();
     return 0;
   } else {
+    /* case when plugin in question is not head */
     while (i) {
       if (i->next_plugin == p) {
 	i->next_plugin = p->next_plugin;
@@ -193,12 +210,20 @@ int load_plugin(const char* library, const char* options, const char* alias)
   new_plugin->plugin_library = strdup(library);
   new_plugin->plugin_options = options? strdup(options) : NULL;
   new_plugin->plugin_handle = dlopen(new_plugin->plugin_library, RTLD_NOW);
+
   if (NULL == new_plugin->plugin_handle) {
     printf("error: unable to open plugin library '%s'\n",
 	   new_plugin->plugin_library);
     return 1;
   }
 
+  /* copy alias so that plugin will be found under its alias */
+  if (alias) {
+    new_plugin->plugin_alias = strdup(alias);
+  } else {
+    new_plugin->plugin_alias = NULL;
+  }
+  
   new_plugin->pfn_open_plugin =
     (PFN_OPEN_PLUGIN) dlsym(new_plugin->plugin_handle, "open_plugin");
   new_plugin->pfn_close_plugin =
@@ -207,6 +232,11 @@ int load_plugin(const char* library, const char* options, const char* alias)
     (PFN_OK_TO_ACCEPT_DATA) dlsym(new_plugin->plugin_handle, "ok_to_accept_data");
   new_plugin->pfn_process_data =
     (PFN_PROCESS_DATA) dlsym(new_plugin->plugin_handle, "process_data"); 
+
+  new_plugin->pfn_plugin_command =
+    (PFN_PLUGIN_COMMAND) dlsym(new_plugin->plugin_handle, "plugin_command"); 
+  new_plugin->pfn_list_commands =
+    (PFN_LIST_COMMANDS) dlsym(new_plugin->plugin_handle, "list_commands"); 
 
   if ((NULL == new_plugin->pfn_open_plugin) ||
       (NULL == new_plugin->pfn_close_plugin) ||
@@ -217,6 +247,17 @@ int load_plugin(const char* library, const char* options, const char* alias)
     return 1;
   }
 
+  if (new_plugin->pfn_plugin_command) {
+    struct command _command =
+      { "", "",
+	"", "",
+	new_plugin->pfn_plugin_command,
+	0, 0
+      };
+    sprintf(_command.name, "%s", library);
+    sprintf(_command.short_name, "%s",alias? alias: library);
+    set_command(&_command);
+  }
   int rc_plugin = (*new_plugin->pfn_open_plugin)
     (new_plugin->plugin_options,
      &listener);

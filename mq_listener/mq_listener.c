@@ -170,16 +170,25 @@ int c_mq_path(const char* name, const char** args)
 
 int c_load_plugin(const char* name, const char** args)
 {
-  const char* plugin_library = 0;
+  char* plugin_library = 0;
   const char* plugin_options = 0;
-  const char* plugin_alias = 0;
-  /* TODO extract alias */
-  plugin_library = args[0];
+  char* plugin_alias = 0;
+
+  plugin_library = strdup(args[0]);
   plugin_options = args[1];
+  plugin_alias = strstr(plugin_library,":");
+  if (plugin_alias) {
+    plugin_alias += 1;
+    plugin_alias[-1] = 0;
+    if (!plugin_alias[0])
+      plugin_alias = 0;
+  }
   printf("Attempting to load plugin %s\n", plugin_library);
-  int res = load_plugin(plugin_library, plugin_options, NULL);
+  int res = load_plugin(plugin_library, plugin_options,
+			plugin_alias);
+  free(plugin_library);
   if (res) {
-    fprintf(stderr, "Filed to load plugin.\n");
+    fprintf(stderr, "Failed to load plugin.\n");
     return 1;    
   } else {
     printf("Load successful\n");
@@ -245,17 +254,20 @@ int c_unload_plugin(const char* name, const char** args)
 
 int c_reorder_plugins(const char* name, const char** args)
 {
-
+  puts("Command not yet implemented");
 }
 //*****************************************************************************
 
 int c_list_plugins(const char* name, const char** args)
 {
-  const char** list_of_plugins = 
+  char** list_of_plugins = 
     list_plugins();
   int i;
-  for (i = 0 ; list_of_plugins[i]; ++i)
+  for (i = 0 ; list_of_plugins[i]; ++i) {
     printf("%d. %s\n", i, list_of_plugins[i]);
+    free(list_of_plugins[i]);
+  }
+  free(list_of_plugins);
 }
 
 //*****************************************************************************

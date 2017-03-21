@@ -68,10 +68,15 @@ typedef char** (*PFN_LIST_COMMANDS)();
  * alter its behavior, it is good to expose help command */
 
 /*
-int open_plugin(const char* plugin_config);
-void close_plugin();
-int ok_to_accept_data();
-int process_data(struct monitor_record_t* data);
+  for convenience of plugin author, correctly named prototypes
+  are provided below.
+
+  int open_plugin(const char* plugin_config);
+  void close_plugin();
+  int ok_to_accept_data();
+  int process_data(struct monitor_record_t* data);
+  char **list_commands();
+  int plugin_command(const char* name, const char** args);
 */
 
 #endif

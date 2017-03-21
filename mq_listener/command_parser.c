@@ -33,11 +33,23 @@
 #include "command_parser.h"
 
 //*****************************************************************************
-static struct command * s_commands;
+static struct command * s_commands = 0;
+
+void set_command(struct command* _command)
+{
+  struct command* cmddup = malloc(sizeof(struct command));
+  _command->next_command = s_commands;
+  memcpy(cmddup, _command, sizeof(struct command));
+  s_commands = cmddup;
+  printf("added command %s\n", _command->name);
+}
 
 void set_commands_array(struct command* _commands)
 {
-  s_commands = _commands;
+  int i;
+  for (i = 0; _commands[i].command_function; ++i) {
+    set_command(_commands+i);
+  }
 }
 
 /*
@@ -47,11 +59,13 @@ void set_commands_array(struct command* _commands)
 int run_command(const char* name, const char** args)
 {
   int i;
-  for (i = 0; s_commands[i].command_function; ++i) {
-    if (!strcmp(s_commands[i].name, name) ||
-	!strcmp(s_commands[i].short_name, name)) {
-      return s_commands[i].command_function(name, args);
+  struct command *p_command = s_commands;
+  while (p_command) {
+    if (!strcmp(p_command->name, name) ||
+	!strcmp(p_command->short_name, name)) {
+      return p_command->command_function(name, args);
     }
+    p_command = p_command->next_command;
   }
   fprintf(stderr, "Not found: %s. Use -h/--help to see possible commands.\n",
 	  name);
@@ -84,7 +98,7 @@ int parse_command(const char* buf)
 
 //*****************************************************************************
 
-int free_command(char** name, char** args)
+int free_parsed_command(char** name, char** args)
 {
   char ** arg = args;
   free(*name);
@@ -111,7 +125,7 @@ int parse_args(int argc, char* argv[])
       if (command) {
 	command_parameters[apn] = NULL;
 	int rc = run_command(command, (const char**)command_parameters);
-	free_command(&command, command_parameters);
+	free_parsed_command(&command, command_parameters);
 	if (rc) {
 	  fprintf(stderr, "Execution error. Quitting\n");
 	  return -1;
@@ -147,10 +161,11 @@ int parse_args(int argc, char* argv[])
     }
   }
 
+  /* execute last command in command line, if possible */
   if (command) {
     command_parameters[apn] = NULL;
     int rc = run_command(command, (const char**)command_parameters);
-    free_command(&command, command_parameters);
+    free_parsed_command(&command, command_parameters);
     if (rc) {
       fprintf(stderr, "Execution error. Quitting\n");
       return -1;
