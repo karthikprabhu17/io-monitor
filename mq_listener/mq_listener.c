@@ -100,6 +100,11 @@ int input_loop()
 {
    MONITOR_MESSAGE monitor_message;
    ssize_t message_size_received;
+   char hostname[HOSTNAME_LEN];
+
+   memset(hostname, 0, HOSTNAME_LEN);
+   gethostname(hostname, HOSTNAME_LEN);
+
    while (1) {
       memset(&monitor_message, 0, sizeof(MONITOR_MESSAGE));
       message_size_received =
@@ -109,6 +114,9 @@ int input_loop()
                 0,   // long type
                 0);  // int flag
       if (message_size_received > 0) {
+        strncpy(monitor_message.monitor_record.hostname,
+                hostname,
+                HOSTNAME_LEN);
 	execute_plugin_chain(&monitor_message.monitor_record);
       } else {
 	fprintf(stderr, "rc = %zu\n", message_size_received);

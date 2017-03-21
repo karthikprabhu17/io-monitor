@@ -23,9 +23,11 @@
 #include <linux/limits.h>
 #endif
 #define STR_LEN 256
+#define HOSTNAME_LEN 64
 
 struct monitor_record_t {
   char facility[STR_LEN];
+  char hostname[HOSTNAME_LEN];
   int timestamp;
   float elapsed_time;
   int pid;
