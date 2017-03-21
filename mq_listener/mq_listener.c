@@ -153,7 +153,7 @@ int c_mq_path(const char* name, const char** args)
     fprintf(stderr, "error: unable to obtain key for message queue path '%s'\n",
 	    message_queue_path);
     fprintf(stderr, "errno: %d\n", errno);
-    exit(1);
+    return 1;
   }
   
   message_queue_id = msgget(message_queue_key, (0664 | IPC_CREAT));
@@ -161,7 +161,7 @@ int c_mq_path(const char* name, const char** args)
     fprintf(stderr, "error: unable to obtain id for message queue path '%s'\n",
 	    message_queue_path);
     fprintf(stderr, "errno: %d\n", errno);
-    exit(1);
+    return 1;
   }
   return 0;
 }
@@ -179,8 +179,8 @@ int c_load_plugin(const char* name, const char** args)
   printf("Attempting to load plugin %s\n", plugin_library);
   int res = load_plugin(plugin_library, plugin_options, NULL);
   if (res) {
-    fprintf(stderr, "Filed to load plugin. Will now quit\n");
-    exit(1);    
+    fprintf(stderr, "Filed to load plugin.\n");
+    return 1;    
   } else {
     printf("Load successful\n");
     return 0;
