@@ -52,18 +52,40 @@ void set_commands_array(struct command* _commands)
   }
 }
 
+void free_command(const char* name) {
+  struct command *p_command = s_commands;
+  struct command *pp_command = s_commands;
+  while (p_command) {
+    if (!strcmp(p_command->name, name) ||
+	!strcmp(p_command->short_name, name)) {
+
+      if (p_command = s_commands) { /* first on list */
+	s_commands = p_command->next_command;
+	free(p_command);
+	return;
+      } else {
+	pp_command->next_command = p_command->next_command;
+	free(p_command);
+	return;
+      }
+    }
+    pp_command = p_command;
+    p_command = p_command->next_command;
+  }
+}
+
+
 /*
  * \param name name of command to be executed
  * \param args nullptr terminated array of command line arguments
  */
 int run_command(const char* name, const char** args)
 {
-  int i;
   struct command *p_command = s_commands;
   while (p_command) {
     if (!strcmp(p_command->name, name) ||
 	!strcmp(p_command->short_name, name)) {
-      return p_command->command_function(name, args);
+      return p_command->command_function(name, args, p_command->state);
     }
     p_command = p_command->next_command;
   }

@@ -13,6 +13,7 @@ struct plugin_chain {
   PFN_LIST_COMMANDS pfn_list_commands;
   int plugin_paused;
   void* plugin_handle;
+  void* state;
   struct plugin_chain* next_plugin;
 };
 

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,14 +54,14 @@ int execute_plugin_chain(struct monitor_record_t *rec)
   plugins_lock();
   while (p) {
     if (p->plugin_paused) {
-      rc_plugin = p->pfn_ok_to_accept_data();
+      rc_plugin = p->pfn_ok_to_accept_data(p->state);
       if (rc_plugin == PLUGIN_ACCEPT_DATA) {
 	p->plugin_paused = 0;
       }
     }
 
     if (!p->plugin_paused) {
-      rc_plugin = p->pfn_process_data(rec);
+      rc_plugin = p->pfn_process_data(rec,p->state);
       if (rc_plugin == PLUGIN_REFUSE_DATA) {
 	p->plugin_paused = 1;
       }
@@ -83,7 +83,8 @@ int execute_plugin_chain(struct monitor_record_t *rec)
  */
 void unload_plugin(struct plugin_chain* p)
 {
-  p->pfn_close_plugin();
+  p->pfn_close_plugin(p->state);
+  free_command(p->plugin_library);
   printf("Closed plugin %s\n", p->plugin_library);
   dlclose(p->plugin_handle);
   free((char*)p->plugin_library);
@@ -212,8 +213,9 @@ int load_plugin(const char* library, const char* options, const char* alias)
   new_plugin->plugin_handle = dlopen(new_plugin->plugin_library, RTLD_NOW);
 
   if (NULL == new_plugin->plugin_handle) {
-    printf("error: unable to open plugin library '%s'\n",
-	   new_plugin->plugin_library);
+    printf("error: unable to open plugin library '%s'\n%s\n",
+	   new_plugin->plugin_library,
+	   dlerror());
     return 1;
   }
 
@@ -247,26 +249,28 @@ int load_plugin(const char* library, const char* options, const char* alias)
     return 1;
   }
 
-  if (new_plugin->pfn_plugin_command) {
-    struct command _command =
-      { "", "",
-	"", "",
-	new_plugin->pfn_plugin_command,
-	0, 0
-      };
-    sprintf(_command.name, "%s", library);
-    sprintf(_command.short_name, "%s",alias? alias: library);
-    set_command(&_command);
-  }
   int rc_plugin = (*new_plugin->pfn_open_plugin)
     (new_plugin->plugin_options,
-     &listener);
+     &listener, &new_plugin->state);
   if (rc_plugin == PLUGIN_OPEN_FAIL) {
     dlclose(new_plugin->plugin_handle);
     printf("error: unable to initialize plugin\n");
     return 1;
   }
 
+  if (new_plugin->pfn_plugin_command) {
+    struct command _command =
+      { "", "",
+	"", "",
+	new_plugin->pfn_plugin_command,
+	0, 0, new_plugin->state
+      };
+    sprintf(_command.name, "%s", library);
+    sprintf(_command.short_name, "%s",alias? alias: library);
+    set_command(&_command);
+  }
+
+  
   plugins_lock();
   if (plugins) {
     struct plugin_chain* tmp = plugins;

@@ -21,21 +21,27 @@
 
 #include <stdio.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 #include "plugin.h"
 #include "monitor_record.h"
 #include "domains_names.h"
 #include "ops_names.h"
 
-static int kill_thread = 0;
-static pthread_t input_thread;
-
+struct plugin_state {
+  int kill_thread;
+  pthread_t input_thread;
+  struct listener * listener;
+};
+  
 void *thread_loop(void* param)
 {
-  struct listener * listener = param;
+  struct plugin_state * ps = param;
+  struct listener * listener = ps->listener;
+
   char buf[PATH_MAX];
  
-  while (!kill_thread) {
+  while (!ps->kill_thread) {
     printf("mq_listener> ");
     fflush(stdout);
     fgets(buf, PATH_MAX, stdin);
@@ -46,32 +52,38 @@ void *thread_loop(void* param)
 
 //*****************************************************************************
 
-int open_plugin(const char* plugin_config, struct listener * listener)
+int open_plugin(const char* plugin_config, struct listener * listener, void *param)
 {
-  pthread_create(&input_thread, NULL, thread_loop, listener);
+  struct plugin_state ** ps = param;
+  *ps = malloc(sizeof (struct plugin_state));
+  (*ps)->kill_thread = 0;
+  (*ps)->listener = listener;
+  pthread_create(&(*ps)->input_thread, NULL, thread_loop, *ps);
   return PLUGIN_OPEN_SUCCESS;
 }
 
 //*****************************************************************************
 
-void close_plugin()
+void close_plugin(void *param)
 {
+  struct plugin_state * ps = param;
   puts("Close request received; joining thread");
-  kill_thread = 1;
-  pthread_join(input_thread, NULL);
+  ps->kill_thread = 1;
+  pthread_join(ps->input_thread, NULL);
+  free(ps);
   puts("Joined");
 }
 
 //*****************************************************************************
 
-int ok_to_accept_data()
+int ok_to_accept_data(void *param)
 {
    return PLUGIN_ACCEPT_DATA;
 }
 
 //*****************************************************************************
 
-int process_data(struct monitor_record_t* data)
+int process_data(struct monitor_record_t* data, void *param)
 {
    return PLUGIN_ACCEPT_DATA;
 }

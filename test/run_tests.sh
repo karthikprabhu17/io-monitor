@@ -9,7 +9,7 @@ for dir in `ls` ; do
     if [ -x $dir/test.sh ] ; then
 	echo Executing test in $dir | tee -a $TEST_LOG_DIR/out
 	cd $dir
-	./test.sh 2>&1 | tee ../$TEST_LOG_DIR/out_$dir
+	./test.sh 2>&1 > ../$TEST_LOG_DIR/out_$dir
 	if [ $? -eq 0 ] ; then
 	    echo Test successful | tee -a ../$TEST_LOG_DIR/out
 	else

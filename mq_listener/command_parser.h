@@ -17,7 +17,7 @@
 #ifndef __COMMAND_PARSER_H
 #define __COMMAND_PARSER_H
 
-typedef int (*command_fun)(const char* name, const char** args);
+typedef int (*command_fun)(const char* name, const char** args, void* state);
 
 /* structure for each command */
 struct command
@@ -38,6 +38,8 @@ struct command
 				  * internally uses linked lists); 
 				  * in input parameters to set_c* functions,
 				  * this field is ignored */
+
+  void *state;
 };
 
 /* add command to comand list */
