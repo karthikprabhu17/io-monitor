@@ -24,10 +24,15 @@
 #endif
 #define STR_LEN 256
 #define HOSTNAME_LEN 64
+#define DEVICE_LEN 10
+#define DOMAIN_UNSPECIFIED -1
+#define FD_NONE -1
+
 
 struct monitor_record_t {
   char facility[STR_LEN];
   char hostname[HOSTNAME_LEN];
+  char device[DEVICE_LEN];
   int timestamp;
   float elapsed_time;
   int pid;
