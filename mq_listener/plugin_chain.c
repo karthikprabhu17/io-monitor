@@ -210,7 +210,7 @@ int load_plugin(const char* library, const char* options, const char* alias)
   }
   new_plugin->plugin_library = strdup(library);
   new_plugin->plugin_options = options? strdup(options) : NULL;
-  new_plugin->plugin_handle = dlopen(new_plugin->plugin_library, RTLD_NOW);
+  new_plugin->plugin_handle = dlopen(new_plugin->plugin_library, RTLD_GLOBAL | RTLD_NOW);
 
   if (NULL == new_plugin->plugin_handle) {
     printf("error: unable to open plugin library '%s'\n%s\n",
