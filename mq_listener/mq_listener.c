@@ -31,6 +31,8 @@
 #include "plugin.h"
 #include "plugin_chain.h"
 #include "command_parser.h"
+#include <curl/curl.h>
+#include <curl/easy.h>
 
 static const int MESSAGE_QUEUE_PROJECT_ID = 'm';
 
@@ -94,6 +96,7 @@ int message_queue_id = -1;
 
 int main(int argc, char** argv)
 {
+  curl_global_init(CURL_GLOBAL_ALL);
   set_commands_array(commands);
   int rc =  parse_args(argc, argv);
   if (rc) {

@@ -500,10 +500,10 @@ void check_for_http(int dom, int fd, const char* buf, size_t count, struct timev
       || (!strncmp("POST ", buffer1, 5))
       || (!strncmp("DELETE ", buffer1, 7))) {
     if (dom == FILE_WRITE) {
-      record(HTTP, HTTP_REQ_SEND, fd, buffer1, buffer2,
+      record(HTTP, HTTP_REQ_SEND, fd, buffer1, NULL,
 	     s, e, 0, 0);
     } else {
-      record(HTTP, HTTP_REQ_RECV, fd, buffer1, buffer2,
+      record(HTTP, HTTP_REQ_RECV, fd, buffer1, NULL,
 	     s, e, 0, 0);
     }
   } else if ((!strncmp("HTTP/1",buffer1, 6))) {
@@ -513,10 +513,10 @@ void check_for_http(int dom, int fd, const char* buf, size_t count, struct timev
     sscanf(buffer1,"%s %d %s",resp_proto, &resp_code, resp_desc);
     if (resp_code >=100 && resp_code <1000) {
       if (dom == FILE_WRITE) {
-	record(HTTP, HTTP_RESP_SEND, fd, buffer1, buffer2,
+	record(HTTP, HTTP_RESP_SEND, fd, buffer1, NULL,
 	       s, e, 0, 0);
       } else {
-	record(HTTP, HTTP_RESP_RECV, fd, buffer1, buffer2,
+	record(HTTP, HTTP_RESP_RECV, fd, buffer1, NULL,
 	       s, e, 0, 0);
       }
     }
