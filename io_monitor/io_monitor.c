@@ -36,6 +36,7 @@
 #include <limits.h>
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <utime.h>
