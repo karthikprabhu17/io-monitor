@@ -48,6 +48,7 @@
 #include <sys/shm.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <pthread.h>
 #ifndef __FreeBSD__
 #include <sys/xattr.h>
 #include <endian.h>
