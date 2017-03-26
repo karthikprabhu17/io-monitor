@@ -36,14 +36,14 @@
 
 static const int MESSAGE_QUEUE_PROJECT_ID = 'm';
 
-int c_mq_path(const char* name, const char** args);
-int c_load_plugin(const char* name, const char** args);
-int c_config(const char* name, const char** args);
-int c_help(const char* name, const char** args);
-int c_unload_plugin(const char* name, const char** args);
-int c_reorder_plugins(const char* name, const char** args);
-int c_list_plugins(const char* name, const char** args);
-int c_quit(const char* name, const char** args);
+int c_mq_path(const char* name, const char** args, void* state);
+int c_load_plugin(const char* name, const char** args, void* state);
+int c_config(const char* name, const char** args, void* state);
+int c_help(const char* name, const char** args, void* state);
+int c_unload_plugin(const char* name, const char** args, void* state);
+int c_reorder_plugins(const char* name, const char** args, void* state);
+int c_list_plugins(const char* name, const char** args, void* state);
+int c_quit(const char* name, const char** args, void* state);
 
 struct command commands[] =
   {
@@ -141,7 +141,7 @@ int input_loop()
 
 //*****************************************************************************
 
-int c_mq_path(const char* name, const char** args)
+int c_mq_path(const char* name, const char** args, void* state)
 {
   const char* message_queue_path;
 
@@ -171,7 +171,7 @@ int c_mq_path(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_load_plugin(const char* name, const char** args)
+int c_load_plugin(const char* name, const char** args, void* state)
 {
   char* plugin_library = 0;
   const char* plugin_options = 0;
@@ -201,7 +201,7 @@ int c_load_plugin(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_config(const char* name, const char** args)
+int c_config(const char* name, const char** args, void* state)
 {
   if (!args[0]) {
     fprintf(stderr, "Path to cfg missing\n");
@@ -218,7 +218,7 @@ int c_config(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_help(const char* name, const char** args)
+int c_help(const char* name, const char** args, void* state)
 {
   int i;
   puts("mq_listener: listening end of io_monitor.");
@@ -243,7 +243,7 @@ int c_help(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_unload_plugin(const char* name, const char** args)
+int c_unload_plugin(const char* name, const char** args, void* state)
 {
   if (args[0]) {
     return unload_plugin_by_name(args[0]);
@@ -255,13 +255,13 @@ int c_unload_plugin(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_reorder_plugins(const char* name, const char** args)
+int c_reorder_plugins(const char* name, const char** args, void* state)
 {
   puts("Command not yet implemented");
 }
 //*****************************************************************************
 
-int c_list_plugins(const char* name, const char** args)
+int c_list_plugins(const char* name, const char** args, void* state)
 {
   char** list_of_plugins = 
     list_plugins();
@@ -275,7 +275,7 @@ int c_list_plugins(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_quit(const char* name, const char** args)
+int c_quit(const char* name, const char** args, void* state)
 {
   puts("quitting");
   unload_all_plugins();

@@ -36,6 +36,7 @@
 #include <limits.h>
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <utime.h>
@@ -47,6 +48,7 @@
 #include <sys/shm.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <pthread.h>
 #ifndef __FreeBSD__
 #include <sys/xattr.h>
 #include <endian.h>
@@ -153,7 +155,6 @@ __attribute__((constructor)) void init() {
    record(DIRS, CHDIR, FD_NONE, current_dir, NULL,
           TIME_BEFORE(), TIME_AFTER(), 0, ZERO_BYTES);
 
-
    free(current_dir);
 }
 
@@ -168,7 +169,6 @@ __attribute__((destructor))  void fini() {
 
    GET_END_TIME();
 
-   
    record(START_STOP, STOP, 0, NULL, NULL,
           TIME_BEFORE(), TIME_AFTER(), 0, ZERO_BYTES);
    //TODO: let collector know that we're done?
@@ -197,9 +197,7 @@ void load_library_functions() {
    }
 
    assign_lib_functions();
-
 }
-
 
 //*****************************************************************************
 
@@ -380,7 +378,6 @@ void record(DOMAIN_TYPE dom_type,
       return;
    }
 
-   
    // if we're not monitoring this domain we just ignore
    const unsigned int domain_bit_flag = 1 << dom_type;
    if (0 == (domain_bit_flags & domain_bit_flag)) {
@@ -451,8 +448,8 @@ void record(DOMAIN_TYPE dom_type,
 
 //*****************************************************************************
 
-
-void check_for_http(int dom, int fd, const char* buf, size_t count, struct timeval *s, struct timeval *e)
+void check_for_http(int dom, int fd, const char* buf, size_t count,
+                    struct timeval *s, struct timeval *e)
 {
   char buffer1[PATH_MAX];
   char buffer2[STR_LEN];
@@ -494,7 +491,7 @@ void check_for_http(int dom, int fd, const char* buf, size_t count, struct timev
     return; // Not a HTTP event!
   }
 
-  if ((!strncmp("GET ",buffer1, 4))
+  if ((!strncmp("GET ", buffer1, 4))
       || (!strncmp("PUT ", buffer1, 4))
       || (!strncmp("HEAD ", buffer1, 5))
       || (!strncmp("POST ", buffer1, 5))
@@ -506,7 +503,7 @@ void check_for_http(int dom, int fd, const char* buf, size_t count, struct timev
       record(HTTP, HTTP_REQ_RECV, fd, buffer1, NULL,
 	     s, e, 0, 0);
     }
-  } else if ((!strncmp("HTTP/1",buffer1, 6))) {
+  } else if ((!strncmp("HTTP/1", buffer1, 6))) {
     int resp_code;
     char resp_proto[linelen[0]+1];
     char resp_desc[linelen[0]+1];
@@ -521,9 +518,9 @@ void check_for_http(int dom, int fd, const char* buf, size_t count, struct timev
       }
     }
   }
-  
 }
 
+//*****************************************************************************
 /* extract real IP inet address from connect call */
 char *real_ip(const struct sockaddr *addr, char *out)
 {
@@ -549,6 +546,7 @@ char *real_ip(const struct sockaddr *addr, char *out)
    return real_path;
 }
 
+//*****************************************************************************
 /* returns NULLPTR terminated array of void pointers;
  * array is malloc-allocated and must be freed after use (unless in exec context) */
 /* 0th fiels in resulting table is undefined; first item from va_list is placed
@@ -567,6 +565,7 @@ void** va_list_to_table(va_list args)
   return result;
 }
 
+//*****************************************************************************
 /* helper functions for exec intercepts */
 int orig_vexecl (const char *path, const char *arg, va_list args)
 {
@@ -574,6 +573,8 @@ int orig_vexecl (const char *path, const char *arg, va_list args)
   argt[0] = (void*)arg;
   return execv(path, (char * const *)argt); 
 }
+
+//*****************************************************************************
 
 int orig_vexecle (const char *path, const char *arg, va_list args)
 {
@@ -592,15 +593,15 @@ int orig_vexecle (const char *path, const char *arg, va_list args)
   return execvpe(path, (char * const *)argt, envp); 
 }
 
+//*****************************************************************************
 
 int orig_vexeclp (const char *path, const char *arg, va_list args)
 {
   void **argt = va_list_to_table(args);
   argt[0] = (void*)arg;
   return execvp(path, (char * const *)argt); 
-
 }
 
-
+//*****************************************************************************
 
 #include "intercept_functions.h"
