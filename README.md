@@ -129,8 +129,14 @@ of operations as one (e.g., to enable/disable monitoring).
 
 ## System requirements
 
-This program should work on any Linux distribution. For build, in addition to standard
-toolchain, you will need indent utility.
+This program should work on any Linux distribution. For building, here are the
+packages needed in addition to standard toolchain.
+
+| Package              | Description |
+| -------              | ----------- |
+| indent               | Used for code generation |
+| libcurl4-openssl-dev | Included in mq_listener for plugins |
+
 
 ## START_ON_OPEN
 
