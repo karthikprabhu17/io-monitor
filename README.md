@@ -83,7 +83,13 @@ of operations as one (e.g., to enable/disable monitoring).
 | HTTP          | HTTP_REQ_RECV    | received an HTTP request |
 | HTTP          | HTTP_RESP_SEND   | sent an HTTP response |
 | HTTP          | HTTP_RESP_RECV   | received an HTTP response |
-
+| MUTEX_DESTROY | THREADS          | pthread_mutex_destroy |
+| MUTEX_INIT    | THREADS          | pthread_mutex_init |
+| MUTEX_LOCK    | THREADS          | pthread_mutex_lock |
+| MUTEX_UNLOCK  | THREADS          | pthread_mutex_unlock |
+| COND_BROADCAST | THREADS         | pthread_cond_broadcast |
+| COND_SIGNAL   | THREADS          | pthread_cond_signal |
+| COND_WAIT     | THREADS          | pthread_cond_wait |
 
 
 
@@ -108,6 +114,7 @@ of operations as one (e.g., to enable/disable monitoring).
 | SOCKETS          | socket operations                | SOCKET, BIND, CONNECT |
 | START_STOP       | begin and end of processes       | START, STOP |
 | SYNCS            | file sync/flush operations       | FLUSH, SYNC |
+| THREADS          | multithreading operations        | MUTEX_LOCK, MUTEX_UNLOCK, MUTEX_INIT, MUTEX_DESTROY, COND_SIGNAL, COND_BROADCAST, COND_WAIT |
 | XATTRS           | extended attribute operations    | GETXATTR, LISTXATTR, REMOVEXATTR, SETXATTR |
 
 ## Environment Variables
