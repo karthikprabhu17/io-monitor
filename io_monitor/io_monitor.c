@@ -75,14 +75,17 @@
 // - implement missing functions for opening/creating files
 //     http://man7.org/linux/man-pages/man2/open.2.html
 
-
+/* io monitor counters */
 static int failed_socket_connections = 0;
 static int failed_ipc_sends = 0;
+static int ipc_retries = 0;
+static int ipc_retry_wait_lost_time = 0;
+static int ipc_records = 0;
 
+/* ipc params */
 static key_t message_queue_key = -1;
 static int message_queue_id = -1;
 static unsigned int domain_bit_flags = 0;
-
 
 
 //***********  initialization  ***********
@@ -168,17 +171,25 @@ __attribute__((constructor)) void init() {
 }
 
 //*****************************************************************************
+#define smprintf(var) smctr += sprintf(summary+smctr, #var " = %d; ", var)
 
 __attribute__((destructor))  void fini() {
    PUTS("fini")
    DECL_VARS()
    GET_START_TIME()
    CHECK_LOADED_FNS();
-   /* collect CPU usage, brk/heap size metrics from /proc */
 
+   /* add summary as s1 parameter to the record */
+   char summary[PATH_MAX];
+   int smctr = 0;
+   smprintf(failed_ipc_sends);
+   smprintf(ipc_retries);
+   smprintf(ipc_retry_wait_lost_time);
+   smprintf(ipc_records);
+   
    GET_END_TIME();
 
-   record(START_STOP, STOP, 0, NULL, NULL,
+   record(START_STOP, STOP, 0, summary, NULL,
           TIME_BEFORE(), TIME_AFTER(), 0, ZERO_BYTES);
    //TODO: let collector know that we're done?
 }
@@ -298,6 +309,8 @@ int send_msg_queue(struct monitor_record_t* monitor_record)
        retries++;
        PUTS("Retrying msgsend");
        usleep(512<<retries);
+       ipc_retries++;
+       ipc_retry_wait_lost_time += (512<<retries);
        continue;
      } else {
        return r;
@@ -539,7 +552,9 @@ void record(DOMAIN_TYPE dom_type,
 #ifndef NDEBUG
      printf("io_monitor.c ipc send failed: %s (errno = %d)\n", strerror(errno), errno);
 #endif
-      failed_ipc_sends++;
+     failed_ipc_sends++;
+   } else {
+     ipc_records++;
    }
 }
 
