@@ -46,8 +46,9 @@ int ok_to_accept_data()
 
 int process_data(struct monitor_record_t* data)
 {
-   printf("%s,%d,%f,%d,%s,%s,%d,%d,%zu,%s,%s\n",
+   printf("%s,%s,%d,%f,%d,%s,%s,%d,%d,%zu,%s,%s\n",
           data->facility,
+          data->device,
           data->timestamp,
           data->elapsed_time,
           data->pid,

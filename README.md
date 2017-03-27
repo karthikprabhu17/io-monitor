@@ -164,6 +164,8 @@ would prevent the normal Python initialization traffic from being captured by th
 | Metric            | Description |
 | ------            | ----------- |
 | facility          | identifier of component that generated the metrics |
+| hostname          | server that generated the metrics |
+| device            | device associated with metrics; "" if n/a |
 | ts                | unix timestamp of when operation occurred |
 | duration          | elapsed time of operation in milliseconds |
 | pid               | process id where metrics were collected |

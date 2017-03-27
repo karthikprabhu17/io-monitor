@@ -23,6 +23,8 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <errno.h>
+#include <curl/curl.h>
+#include <curl/easy.h>
 #include "domains.h"
 #include "ops.h"
 #include "ops_names.h"
@@ -31,8 +33,7 @@
 #include "plugin.h"
 #include "plugin_chain.h"
 #include "command_parser.h"
-#include <curl/curl.h>
-#include <curl/easy.h>
+#include "resolver.h"
 
 static const int MESSAGE_QUEUE_PROJECT_ID = 'm';
 
@@ -108,6 +109,7 @@ int main(int argc, char** argv)
       return 1;
     }
     show_runtime_commands = 1;
+    capture_device_info();
     return input_loop();
   }
   
@@ -122,6 +124,11 @@ int input_loop()
 {
    MONITOR_MESSAGE monitor_message;
    ssize_t message_size_received;
+   char hostname[HOSTNAME_LEN];
+
+   memset(hostname, 0, HOSTNAME_LEN);
+   gethostname(hostname, HOSTNAME_LEN);
+
    while (1) {
       memset(&monitor_message, 0, sizeof(MONITOR_MESSAGE));
       message_size_received =
@@ -131,6 +138,28 @@ int input_loop()
                 0,   // long type
                 0);  // int flag
       if (message_size_received > 0) {
+        // populate host name
+        strncpy(monitor_message.monitor_record.hostname,
+                hostname,
+                HOSTNAME_LEN);
+
+        // track paths, descriptors, devices
+        if (monitor_message.monitor_record.dom_type == FILE_OPEN_CLOSE) {
+           if (monitor_message.monitor_record.op_type == OPEN) {
+              register_file(&monitor_message.monitor_record);
+              resolve_file(&monitor_message.monitor_record);
+           } else if (monitor_message.monitor_record.op_type == CLOSE) {
+              resolve_file(&monitor_message.monitor_record);
+              deregister_file(&monitor_message.monitor_record);
+           }
+        } else if ((monitor_message.monitor_record.dom_type == FILE_READ) ||
+                   (monitor_message.monitor_record.dom_type == FILE_WRITE) ||
+                   (monitor_message.monitor_record.dom_type == FILE_METADATA) ||
+                   (monitor_message.monitor_record.dom_type == FILE_SPACE) ||
+                   (monitor_message.monitor_record.dom_type == SYNCS)) {
+           resolve_file(&monitor_message.monitor_record);
+        }
+
 	execute_plugin_chain(&monitor_message.monitor_record);
       } else {
 	fprintf(stderr, "rc = %zu\n", message_size_received);
@@ -191,8 +220,8 @@ int c_load_plugin(const char* name, const char** args, void* state)
 			plugin_alias);
   free(plugin_library);
   if (res) {
-    fprintf(stderr, "Failed to load plugin.\n");
-    return 1;    
+    fprintf(stderr, "Failed to load plugin. Will now quit\n");
+    exit(1);    
   } else {
     printf("Load successful\n");
     return 0;
