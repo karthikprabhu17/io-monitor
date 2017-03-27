@@ -29,7 +29,7 @@ function run_case
     kill -9 `pgrep mq_listener` 
     
     #verify side effects of functions
-    cat listener_output.csv | grep 'u,' | cut -d , -f 5,6 > events_captured.csv
+    cat listener_output.csv | grep 'u,' | cut -d , -f 6,7 > events_captured.csv
 
     diff events_captured.csv $3
     if [ 0 -ne $? ] ; then

@@ -22,7 +22,7 @@ START_STOP,STOP
 EOF
 
 #run listener for test
-(../../mq_listener/mq_listener -m mq1 -p ../../plugins/output_csv.so > listener_output.csv ) &
+(../../mq_listener/mq_listener -m mq1 -p ../../plugins/output_csv.so | tee listener_output.csv ) &
 
 #run test program
 LD_PRELOAD=`pwd`/../../io_monitor/io_monitor.so MESSAGE_QUEUE_PATH=`pwd`/mq1 MONITOR_DOMAINS=ALL ./a.out
@@ -32,7 +32,7 @@ sleep 1
 kill -9 `pgrep mq_listener` 
     
 #verify side effects of functions
-cat listener_output.csv | grep 'u,' | cut -d , -f 5,6 > events_captured.csv
+cat listener_output.csv | grep 'u,' | cut -d , -f 6,7 > events_captured.csv
 
 diff events_captured.csv sample.csv
 if [ 0 -ne $? ] ; then

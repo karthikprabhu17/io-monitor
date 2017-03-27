@@ -144,6 +144,7 @@ int input_loop()
                 HOSTNAME_LEN);
 
         // track paths, descriptors, devices
+	
         if (monitor_message.monitor_record.dom_type == FILE_OPEN_CLOSE) {
            if (monitor_message.monitor_record.op_type == OPEN) {
               register_file(&monitor_message.monitor_record);

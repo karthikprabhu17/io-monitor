@@ -287,10 +287,22 @@ int send_msg_queue(struct monitor_record_t* monitor_record)
    monitor_message.message_type = 1L;
    memcpy(&monitor_message.monitor_record, monitor_record, sizeof (*monitor_record));
 
-   return msgsnd(message_queue_id,
-                 &monitor_message,
-                 sizeof(*monitor_record),
-                 IPC_NOWAIT);
+   int r;
+   int retries = 0;
+   while (retries < 5) {
+     r = msgsnd(message_queue_id,
+		&monitor_message,
+		sizeof(*monitor_record),
+		IPC_NOWAIT);
+     if (r && errno == EAGAIN) {
+       retries++;
+       PUTS("Retrying msgsend");
+       usleep(512<<retries);
+       continue;
+     } else {
+       return r;
+     }
+   }
 }
 
 //*****************************************************************************
@@ -524,7 +536,9 @@ void record(DOMAIN_TYPE dom_type,
    }
 
    if (rc_ipc != 0) {
-      PUTS("io_monitor.c ipc send failed")
+#ifndef NDEBUG
+     printf("io_monitor.c ipc send failed: %s (errno = %d)\n", strerror(errno), errno);
+#endif
       failed_ipc_sends++;
    }
 }

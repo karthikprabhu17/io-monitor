@@ -19,14 +19,14 @@ EOF
 (../../mq_listener/mq_listener -m mq1 -p ../../plugins/output_csv.so > listener_output.csv ) &
 
 #run test program
-START_ON_OPEN=file LD_PRELOAD=`pwd`/../../io_monitor/io_monitor.so MESSAGE_QUEUE_PATH=`pwd`/mq1 MONITOR_DOMAINS=ALL ./main.py
+START_ON_OPEN=file LD_PRELOAD=`pwd`/../../io_monitor/io_monitor.so MESSAGE_QUEUE_PATH=`pwd`/mq1 MONITOR_DOMAINS=FILE_OPEN_CLOSE,FILE_WRITE,START_STOP ./main.py
 
 #kill listener
 sleep 1
 kill -9 `pgrep mq_listener` 
     
 #verify side effects of functions
-cat listener_output.csv | grep 'u,' | cut -d , -f 5,6 > events_captured.csv
+cat listener_output.csv | grep 'u,' | cut -d , -f 6,7 > events_captured.csv
 
 diff events_captured.csv sample.csv
 if [ 0 -ne $? ] ; then
