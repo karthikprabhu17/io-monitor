@@ -72,8 +72,6 @@
 // TODO and enhancements
 // - implement missing intercept calls (FILE_SPACE, PROCESSES, etc.)
 // - find a better name/grouping for MISC
-// - should there be a sampling mechanism? (capturing everything on a busy
-//     server process can generate a lot of data)
 // - implement missing functions for opening/creating files
 //     http://man7.org/linux/man-pages/man2/open.2.html
 
