@@ -23,6 +23,8 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <errno.h>
+#include <curl/curl.h>
+#include <curl/easy.h>
 #include "domains.h"
 #include "ops.h"
 #include "ops_names.h"
@@ -31,16 +33,18 @@
 #include "plugin.h"
 #include "plugin_chain.h"
 #include "command_parser.h"
+#include "resolver.h"
 
 static const int MESSAGE_QUEUE_PROJECT_ID = 'm';
 
-int c_mq_path(const char* name, const char** args);
-
-int c_load_plugin(const char* name, const char** args);
-
-int c_config(const char* name, const char** args);
-
-int c_help(const char* name, const char** args);
+int c_mq_path(const char* name, const char** args, void* state);
+int c_load_plugin(const char* name, const char** args, void* state);
+int c_config(const char* name, const char** args, void* state);
+int c_help(const char* name, const char** args, void* state);
+int c_unload_plugin(const char* name, const char** args, void* state);
+int c_reorder_plugins(const char* name, const char** args, void* state);
+int c_list_plugins(const char* name, const char** args, void* state);
+int c_quit(const char* name, const char** args, void* state);
 
 struct command commands[] =
   {
@@ -52,6 +56,22 @@ struct command commands[] =
      " may want to unload one of them)."
      " After that you may supply parameter string for your plugin.",
      c_load_plugin,0},
+    {"unload-plugin", "u",
+     "<plugin-library-path or alias>",
+     "remove plugin from running image of mq_listener",
+     c_unload_plugin,1},
+    {"reorder-plugins", "r",
+     "<comma separated list of plugins, referred to by paths or aliases>",
+     "It is required to give exhaustive list of all plugins that are loaded; otherwise "
+     "command will be rejected",
+     c_reorder_plugins,1},
+    {"list-plugins", "l","",
+     "list currently loaded plugins",
+     c_list_plugins,1},
+    {"quit", "q",
+     "",
+     "exit instance of mq_listener",
+     c_quit, 1},
     {"mq-path", "m",
      "<path>",
      "Select message queue file. This parameter is mandatory unless config file is used",
@@ -71,11 +91,13 @@ struct command commands[] =
 //*****************************************************************************
 int input_loop();
 
+int show_runtime_commands = 0;
 int message_queue_key = -1;
 int message_queue_id = -1;
 
 int main(int argc, char** argv)
 {
+  curl_global_init(CURL_GLOBAL_ALL);
   set_commands_array(commands);
   int rc =  parse_args(argc, argv);
   if (rc) {
@@ -86,6 +108,8 @@ int main(int argc, char** argv)
 	      "via config file or via --mq-path/-m command line option\n");
       return 1;
     }
+    show_runtime_commands = 1;
+    capture_device_info();
     return input_loop();
   }
   
@@ -100,6 +124,11 @@ int input_loop()
 {
    MONITOR_MESSAGE monitor_message;
    ssize_t message_size_received;
+   char hostname[HOSTNAME_LEN];
+
+   memset(hostname, 0, HOSTNAME_LEN);
+   gethostname(hostname, HOSTNAME_LEN);
+
    while (1) {
       memset(&monitor_message, 0, sizeof(MONITOR_MESSAGE));
       message_size_received =
@@ -109,6 +138,28 @@ int input_loop()
                 0,   // long type
                 0);  // int flag
       if (message_size_received > 0) {
+        // populate host name
+        strncpy(monitor_message.monitor_record.hostname,
+                hostname,
+                HOSTNAME_LEN);
+
+        // track paths, descriptors, devices
+        if (monitor_message.monitor_record.dom_type == FILE_OPEN_CLOSE) {
+           if (monitor_message.monitor_record.op_type == OPEN) {
+              register_file(&monitor_message.monitor_record);
+              resolve_file(&monitor_message.monitor_record);
+           } else if (monitor_message.monitor_record.op_type == CLOSE) {
+              resolve_file(&monitor_message.monitor_record);
+              deregister_file(&monitor_message.monitor_record);
+           }
+        } else if ((monitor_message.monitor_record.dom_type == FILE_READ) ||
+                   (monitor_message.monitor_record.dom_type == FILE_WRITE) ||
+                   (monitor_message.monitor_record.dom_type == FILE_METADATA) ||
+                   (monitor_message.monitor_record.dom_type == FILE_SPACE) ||
+                   (monitor_message.monitor_record.dom_type == SYNCS)) {
+           resolve_file(&monitor_message.monitor_record);
+        }
+
 	execute_plugin_chain(&monitor_message.monitor_record);
       } else {
 	fprintf(stderr, "rc = %zu\n", message_size_received);
@@ -119,7 +170,7 @@ int input_loop()
 
 //*****************************************************************************
 
-int c_mq_path(const char* name, const char** args)
+int c_mq_path(const char* name, const char** args, void* state)
 {
   const char* message_queue_path;
 
@@ -134,7 +185,7 @@ int c_mq_path(const char* name, const char** args)
     fprintf(stderr, "error: unable to obtain key for message queue path '%s'\n",
 	    message_queue_path);
     fprintf(stderr, "errno: %d\n", errno);
-    exit(1);
+    return 1;
   }
   
   message_queue_id = msgget(message_queue_key, (0664 | IPC_CREAT));
@@ -142,25 +193,34 @@ int c_mq_path(const char* name, const char** args)
     fprintf(stderr, "error: unable to obtain id for message queue path '%s'\n",
 	    message_queue_path);
     fprintf(stderr, "errno: %d\n", errno);
-    exit(1);
+    return 1;
   }
   return 0;
 }
 
 //*****************************************************************************
 
-int c_load_plugin(const char* name, const char** args)
+int c_load_plugin(const char* name, const char** args, void* state)
 {
-  const char* plugin_library = 0;
+  char* plugin_library = 0;
   const char* plugin_options = 0;
-  const char* plugin_alias = 0;
-  /* TODO extract alias */
-  plugin_library = args[0];
+  char* plugin_alias = 0;
+
+  plugin_library = strdup(args[0]);
   plugin_options = args[1];
+  plugin_alias = strstr(plugin_library,":");
+  if (plugin_alias) {
+    plugin_alias += 1;
+    plugin_alias[-1] = 0;
+    if (!plugin_alias[0])
+      plugin_alias = 0;
+  }
   printf("Attempting to load plugin %s\n", plugin_library);
-  int res = load_plugin(plugin_library, plugin_options, NULL);
+  int res = load_plugin(plugin_library, plugin_options,
+			plugin_alias);
+  free(plugin_library);
   if (res) {
-    fprintf(stderr, "Filed to load plugin. Will now quit\n");
+    fprintf(stderr, "Failed to load plugin. Will now quit\n");
     exit(1);    
   } else {
     printf("Load successful\n");
@@ -170,7 +230,7 @@ int c_load_plugin(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_config(const char* name, const char** args)
+int c_config(const char* name, const char** args, void* state)
 {
   if (!args[0]) {
     fprintf(stderr, "Path to cfg missing\n");
@@ -187,7 +247,7 @@ int c_config(const char* name, const char** args)
 
 //*****************************************************************************
 
-int c_help(const char* name, const char** args)
+int c_help(const char* name, const char** args, void* state)
 {
   int i;
   puts("mq_listener: listening end of io_monitor.");
@@ -195,8 +255,16 @@ int c_help(const char* name, const char** args)
   puts("   ./mq_listener/mq_listener -m mq1 -p plugins/output_table.so");
   puts("   ./mq_listener/mq_listener -c mq_listener/listener.conf.example");
   for (i = 0; commands[i].command_function; ++i) {
+    if (commands[i].interactive_only && !show_runtime_commands)
+      continue;
+
+    if (show_runtime_commands) {
+      printf("%s (%s) %s\n", commands[i].name,
+	     commands[i].short_name, commands[i].params_desc);
+    } else {
       printf("--%s / -%s %s\n", commands[i].name,
 	     commands[i].short_name, commands[i].params_desc);
+    }
       printf("     %s\n", commands[i].help);
   }
   return 0;
@@ -204,3 +272,41 @@ int c_help(const char* name, const char** args)
 
 //*****************************************************************************
 
+int c_unload_plugin(const char* name, const char** args, void* state)
+{
+  if (args[0]) {
+    return unload_plugin_by_name(args[0]);
+  } else {
+    fprintf(stderr, "Argument missing: name of plugin (path or alias).\n");
+    return 1;
+  }
+}
+
+//*****************************************************************************
+
+int c_reorder_plugins(const char* name, const char** args, void* state)
+{
+  puts("Command not yet implemented");
+}
+//*****************************************************************************
+
+int c_list_plugins(const char* name, const char** args, void* state)
+{
+  char** list_of_plugins = 
+    list_plugins();
+  int i;
+  for (i = 0 ; list_of_plugins[i]; ++i) {
+    printf("%d. %s\n", i, list_of_plugins[i]);
+    free(list_of_plugins[i]);
+  }
+  free(list_of_plugins);
+}
+
+//*****************************************************************************
+
+int c_quit(const char* name, const char** args, void* state)
+{
+  puts("quitting");
+  unload_all_plugins();
+  exit(1);
+}

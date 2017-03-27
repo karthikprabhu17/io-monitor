@@ -80,6 +80,15 @@ typedef enum {
    HTTP_RESP_RECV, // Receive HTTP response
    HTTP_RESP_FINI_SEND, // Sent final byte of HTTP response
    HTTP_RESP_FINI_RECV, // Receive final byte of HTTP response
+
+   MUTEX_LOCK,
+   MUTEX_UNLOCK,
+   MUTEX_INIT,
+   MUTEX_DESTROY,
+   THREAD_CREATE,
+   COND_WAIT,
+   COND_SIGNAL,
+   COND_BROADCAST,
    
    END_OPS         // keep this one as last
 } OP_TYPE;

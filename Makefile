@@ -31,9 +31,11 @@ headers = $(include_dir)/ops.h \
 plugins = plugins/sample_plugin.so \
 	  plugins/output_csv.so \
 	  plugins/output_table.so \
-	  plugins/filter_domains.so
+	  plugins/filter_domains.so \
+          plugins/influxdb_plugin.so \
+          plugins/input_cli.so
 
-mq_listener_objs = mq_listener/mq_listener.o mq_listener/plugin_chain.o mq_listener/command_parser.o
+mq_listener_objs = mq_listener/mq_listener.o mq_listener/plugin_chain.o mq_listener/command_parser.o mq_listener/resolver.o
 
 all: mq_listener/mq_listener io_monitor/io_monitor.so $(plugins)
 
@@ -64,16 +66,33 @@ mq_listener/%.o: mq_listener/%.c $(headers) mq_listener/*.h
 	@cd mq_listener ; gcc $(CFLAGS) -c ../$< -o ../$@
 	@echo OK
 
+mq_listener/%.o: mq_listener/%.cpp $(headers) mq_listener/*.h
+	@echo -n  "generating object $@ ... "
+	@cd mq_listener ; g++ $(CFLAGS) -c ../$< -o ../$@
+	@echo OK
+
 mq_listener/mq_listener: $(mq_listener_objs)
 	@echo -n  "generating executable $@ ... "
-	@gcc $(CFLAGS) $^ -o mq_listener/mq_listener -ldl
+	@g++ $(CFLAGS) $^ -o mq_listener/mq_listener -lcurl -ldl -lpthread
 	@echo OK
 
 #build sample plugin
+plugins/input_cli.so: plugins/input_cli.c $(headers)
+	@echo -n  "generating plugin $@ ... (L) "
+	@cd plugins ; gcc $(CFLAGS) -lpthread -shared -fPIC ../$< -o ../$@
+	@echo OK
+
+plugins/influxdb_plugin.so: plugins/influxdb_plugin.c $(headers)
+	@echo -n  "generating plugin $@ ... (L) "
+	@cd plugins ; gcc $(CFLAGS) -lpthread -shared -fPIC ../$< -o ../$@
+	@echo OK
+
 plugins/%.so: plugins/%.c $(headers)
 	@echo -n  "generating plugin $@ ... "
 	@cd plugins ; gcc $(CFLAGS) -shared -fPIC ../$< -o ../$@
 	@echo OK
+
+
 
 clean:
 	rm -f mq_listener/mq_listener

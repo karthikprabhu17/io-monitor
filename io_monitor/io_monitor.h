@@ -55,8 +55,8 @@ static const char* ENV_TIME_SAMPLE_DURATION = "TIME_SAMPLE_DURATION";
 if (NULL == orig_open) initialize_monitor();
 
 static const int SOCKET_PORT = 8001;
-static const int DOMAIN_UNSPECIFIED = -1;
-static const int FD_NONE = -1;
+//static const int DOMAIN_UNSPECIFIED = -1;
+//static const int FD_NONE = -1;
 static const int MQ_KEY_NONE = -1;
 
 

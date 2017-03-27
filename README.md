@@ -83,7 +83,13 @@ of operations as one (e.g., to enable/disable monitoring).
 | HTTP          | HTTP_REQ_RECV    | received an HTTP request |
 | HTTP          | HTTP_RESP_SEND   | sent an HTTP response |
 | HTTP          | HTTP_RESP_RECV   | received an HTTP response |
-
+| MUTEX_DESTROY | THREADS          | pthread_mutex_destroy |
+| MUTEX_INIT    | THREADS          | pthread_mutex_init |
+| MUTEX_LOCK    | THREADS          | pthread_mutex_lock |
+| MUTEX_UNLOCK  | THREADS          | pthread_mutex_unlock |
+| COND_BROADCAST | THREADS         | pthread_cond_broadcast |
+| COND_SIGNAL   | THREADS          | pthread_cond_signal |
+| COND_WAIT     | THREADS          | pthread_cond_wait |
 
 
 
@@ -108,6 +114,7 @@ of operations as one (e.g., to enable/disable monitoring).
 | SOCKETS          | socket operations                | SOCKET, BIND, CONNECT |
 | START_STOP       | begin and end of processes       | START, STOP |
 | SYNCS            | file sync/flush operations       | FLUSH, SYNC |
+| THREADS          | multithreading operations        | MUTEX_LOCK, MUTEX_UNLOCK, MUTEX_INIT, MUTEX_DESTROY, COND_SIGNAL, COND_BROADCAST, COND_WAIT |
 | XATTRS           | extended attribute operations    | GETXATTR, LISTXATTR, REMOVEXATTR, SETXATTR |
 
 ## Environment Variables
@@ -124,8 +131,14 @@ of operations as one (e.g., to enable/disable monitoring).
 
 ## System requirements
 
-This program should work on any Linux distribution. For build, in addition to standard
-toolchain, you will need indent utility.
+This program should work on any Linux distribution. For building, here are the
+packages needed in addition to standard toolchain.
+
+| Package              | Description |
+| -------              | ----------- |
+| indent               | Used for code generation |
+| libcurl4-openssl-dev | Included in mq_listener for plugins |
+
 
 ## START_ON_OPEN
 
@@ -153,6 +166,8 @@ would prevent the normal Python initialization traffic from being captured by th
 | Metric            | Description |
 | ------            | ----------- |
 | facility          | identifier of component that generated the metrics |
+| hostname          | server that generated the metrics |
+| device            | device associated with metrics; "" if n/a |
 | ts                | unix timestamp of when operation occurred |
 | duration          | elapsed time of operation in milliseconds |
 | pid               | process id where metrics were collected |

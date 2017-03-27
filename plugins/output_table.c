@@ -53,14 +53,15 @@ int process_data(struct monitor_record_t* data)
 
   if (!((ln++)&15)) {
     /* print header every 16th line"*/
-    printf("%10s %10s %8s %5s %20s  %-20s %3s %5s %8s %s\n",
-	   "FACILITY", "TS.", "ELAPSED",
+    printf("%10s %10s %10s %8s %5s %20s  %-20s %3s %5s %8s %s\n",
+	   "FACILITY", "DEV", "TS.", "ELAPSED",
 	   "PID", "DOMAIN", "OPERATION", "ERR", "FD",
 	   "XFER", "PARM");
   }
  
-  printf("%10s %10d %8.4f %5d %20s  %-20s %3d %5d %8zu %s %s\n",
+  printf("%10s %10s %10d %8.4f %5d %20s  %-20s %3d %5d %8zu %s %s\n",
 	 data->facility,
+         data->device,
 	 data->timestamp,
 	 data->elapsed_time,
 	 data->pid,
