@@ -14,37 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __MONITOR_RECORD_H
-#define __MONITOR_RECORD_H
+#ifndef __RESOLVER_H
+#define __RESOLVER_H
 
-#ifdef __FreeBSD__
-#include <sys/syslimits.h>
-#else
-#include <linux/limits.h>
+#ifdef __cplusplus
+extern "C" {
 #endif
-#define STR_LEN 256
-#define HOSTNAME_LEN 64
-#define DEVICE_LEN 10
-#define DOMAIN_UNSPECIFIED -1
-#define FD_NONE -1
-
-
-struct monitor_record_t {
-  char facility[STR_LEN];
-  char hostname[HOSTNAME_LEN];
-  char device[DEVICE_LEN];
-  int timestamp;
-  float elapsed_time;
-  int pid;
-
-  int dom_type;
-  int op_type;
-
-  int error_code;
-  int fd;
-  size_t bytes_transferred;
-  char s1[PATH_MAX];
-  char s2[STR_LEN];
-};
+   void capture_device_info();
+   void register_file(struct monitor_record_t *rec);
+   void deregister_file(struct monitor_record_t *rec);
+   void resolve_file(struct monitor_record_t *rec);
+#ifdef __cplusplus
+}
+#endif
 
 #endif

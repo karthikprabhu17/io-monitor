@@ -49,13 +49,15 @@ static const char* ENV_START_ON_OPEN = "START_ON_OPEN";
 static const char* ENV_MONITOR_DOMAINS = "MONITOR_DOMAINS";
 static const char* ENV_START_ON_ELAPSED = "START_ON_ELAPSED";
 static const char* ENV_COUNT_SAMPLE_FREQUENCY = "COUNT_SAMPLE_FREQUENCY";
+static const char* ENV_TIME_SAMPLE_FREQUENCY = "TIME_SAMPLE_FREQUENCY";
+static const char* ENV_TIME_SAMPLE_DURATION = "TIME_SAMPLE_DURATION";
 
 #define CHECK_LOADED_FNS() \
 if (NULL == orig_open) initialize_monitor();
 
 static const int SOCKET_PORT = 8001;
-static const int DOMAIN_UNSPECIFIED = -1;
-static const int FD_NONE = -1;
+//static const int DOMAIN_UNSPECIFIED = -1;
+//static const int FD_NONE = -1;
 static const int MQ_KEY_NONE = -1;
 
 
