@@ -10,6 +10,8 @@
 #include "ops_names.h"
 
 static const char facility[] = "facility";//char type
+static const char hostname[] = "hostname";
+static const char device[] = "device";
 static const char timestamp[] = "timestamp";//int
 static const char elapsed_time[] = "elapsed_time";//float
 static const char pid[] = "pid";//int
@@ -142,11 +144,13 @@ int process_data(struct monitor_record_t* data)
           // have both s1 and s2
           snprintf(postdata,
                    1024,
-                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
+                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
                    measure,
                    // tags
+                   device, data->device, 
                    dom_type, domains_names[data->dom_type],
                    facility, data->facility,
+                   hostname, data->hostname,
                    op_type, ops_names[data->op_type],
                    s1, s1_data,
                    s2, s2_data,
@@ -161,13 +165,15 @@ int process_data(struct monitor_record_t* data)
          // have s1, but not s2
           snprintf(postdata,
                    1024,
-                   "%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
+                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
                    measure,
                    // tags
-                   facility, data->facility,
-                   s1, s1_data,
+                   device, data->device,
                    dom_type, domains_names[data->dom_type],
+                   facility, data->facility,
+                   hostname, data->hostname,
                    op_type, ops_names[data->op_type],
+                   s1, s1_data,
 
                    timestamp, data->timestamp,
                    elapsed_time, data->elapsed_time,
@@ -179,13 +185,15 @@ int process_data(struct monitor_record_t* data)
          // have s2, but not n1
           snprintf(postdata,
                    1024,
-                   "%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
+                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
                    measure,
                    // tags
-                   facility, data->facility,
-                   s2, s2_data,
+                   device, data->device,
                    dom_type, domains_names[data->dom_type],
+                   facility, data->facility,
+                   hostname, data->hostname,
                    op_type, ops_names[data->op_type],
+                   s2, s2_data,
 
                    timestamp, data->timestamp,
                    elapsed_time, data->elapsed_time,
@@ -197,11 +205,13 @@ int process_data(struct monitor_record_t* data)
          // have neither s1 nor s2
           snprintf(postdata,
                    1024,
-                   "%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
+                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
                    measure,
                    // tags
-                   facility, data->facility,
+                   device, data->device,
                    dom_type, domains_names[data->dom_type],
+                   facility, data->facility,
+                   hostname, data->hostname,
                    op_type, ops_names[data->op_type],
 
                    timestamp, data->timestamp,
