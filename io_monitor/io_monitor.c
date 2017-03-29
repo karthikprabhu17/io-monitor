@@ -158,7 +158,7 @@ __attribute__((constructor)) void init() {
 
    GET_END_TIME();
 
-   char ppid[10];
+   char ppid[15];
    sprintf(ppid, "PPID:%d", getppid());
    record(START_STOP, START, 0, cmdline, ppid,
           TIME_BEFORE(), TIME_AFTER(), 0, ZERO_BYTES);
