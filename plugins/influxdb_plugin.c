@@ -123,10 +123,11 @@ int process_data(struct monitor_record_t* data)
    int rc = PLUGIN_REFUSE_DATA;
    CURLcode curl_status;
    char postdata[1024];
-   char s1_data[PATH_MAX];
-   char s2_data[STR_LEN];
+   char s1_data[PATH_MAX]="";
+   char s2_data[STR_LEN]="";
    int have_s1;
    int have_s2;
+   
    CURL* curl_handle = curl_easy_init();
    if (curl_handle) {
       have_s1 = (data->s1 != NULL) && (strlen(data->s1) > 0) && !is_all_whitespace(data->s1);
@@ -140,20 +141,21 @@ int process_data(struct monitor_record_t* data)
          copy_escaped_tag_value(data->s2, s2_data, STR_LEN);
       }
 
-      if (have_s1 && have_s2) {
-          // have both s1 and s2
           snprintf(postdata,
                    1024,
-                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
+                   "%s,%s=%s,%s=%s,%s=%s %s=\"%s\",%s=\"%s\",%s=\"%s\",%s=\"%s\",%s=\"%s\",%s=\"%s\",%s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
                    measure,
-                   // tags
-                   device, data->device, 
-                   dom_type, domains_names[data->dom_type],
                    facility, data->facility,
+                   "dom_tag", domains_names[data->dom_type],
+                   "op_tag", ops_names[data->op_type],
+
+		   // tags
+                   device, data->device[0]?data->device:"none", 
+                   dom_type, domains_names[data->dom_type],
                    hostname, data->hostname,
                    op_type, ops_names[data->op_type],
-                   s1, s1_data,
-                   s2, s2_data,
+                   s1,s1_data[0]?s1_data:"NULL",
+                   s2, s2_data[0]?s2_data:"NULL",
 
                    timestamp, data->timestamp,
                    elapsed_time, data->elapsed_time,
@@ -161,66 +163,6 @@ int process_data(struct monitor_record_t* data)
                    error_code, data->error_code,
                    fd, data->fd,
                    bytes_transferred, data->bytes_transferred);
-      } else if (have_s1) {
-         // have s1, but not s2
-          snprintf(postdata,
-                   1024,
-                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
-                   measure,
-                   // tags
-                   device, data->device,
-                   dom_type, domains_names[data->dom_type],
-                   facility, data->facility,
-                   hostname, data->hostname,
-                   op_type, ops_names[data->op_type],
-                   s1, s1_data,
-
-                   timestamp, data->timestamp,
-                   elapsed_time, data->elapsed_time,
-                   pid, data->pid,
-                   error_code, data->error_code,
-                   fd, data->fd,
-                   bytes_transferred, data->bytes_transferred);
-      } else if (have_s2) {
-         // have s2, but not n1
-          snprintf(postdata,
-                   1024,
-                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
-                   measure,
-                   // tags
-                   device, data->device,
-                   dom_type, domains_names[data->dom_type],
-                   facility, data->facility,
-                   hostname, data->hostname,
-                   op_type, ops_names[data->op_type],
-                   s2, s2_data,
-
-                   timestamp, data->timestamp,
-                   elapsed_time, data->elapsed_time,
-                   pid, data->pid,
-                   error_code, data->error_code,
-                   fd, data->fd,
-                   bytes_transferred, data->bytes_transferred);
-      } else {
-         // have neither s1 nor s2
-          snprintf(postdata,
-                   1024,
-                   "%s,%s=%s,%s=%s,%s=%s,%s=%s,%s=%s %s=%d,%s=%f,%s=%d,%s=%d,%s=%d,%s=%zu",
-                   measure,
-                   // tags
-                   device, data->device,
-                   dom_type, domains_names[data->dom_type],
-                   facility, data->facility,
-                   hostname, data->hostname,
-                   op_type, ops_names[data->op_type],
-
-                   timestamp, data->timestamp,
-                   elapsed_time, data->elapsed_time,
-                   pid, data->pid,
-                   error_code, data->error_code,
-                   fd, data->fd,
-                   bytes_transferred, data->bytes_transferred);
-      }
 
       puts(postdata);
 
