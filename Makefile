@@ -32,7 +32,7 @@ plugins = plugins/sample_plugin.so \
 	  plugins/output_csv.so \
 	  plugins/output_table.so \
 	  plugins/filter_domains.so \
-          plugins/influxdb_plugin.so \
+          plugins/output_influxdb.so \
           plugins/input_cli.so
 
 mq_listener_objs = mq_listener/mq_listener.o mq_listener/plugin_chain.o mq_listener/command_parser.o mq_listener/resolver.o
@@ -82,7 +82,7 @@ plugins/input_cli.so: plugins/input_cli.c $(headers)
 	@cd plugins ; gcc $(CFLAGS) -lpthread -shared -fPIC ../$< -o ../$@
 	@echo OK
 
-plugins/influxdb_plugin.so: plugins/influxdb_plugin.c $(headers)
+plugins/output_influxdb.so: plugins/output_influxdb.c $(headers)
 	@echo -n  "generating plugin $@ ... (L) "
 	@cd plugins ; gcc $(CFLAGS) -lpthread -shared -fPIC ../$< -o ../$@
 	@echo OK
