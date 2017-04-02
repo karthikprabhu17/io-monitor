@@ -64,7 +64,7 @@ of operations as one (e.g., to enable/disable monitoring).
 | FLOCK         | MISC             | flock |
 | MKNOD         | MISC             | mknod |
 | RENAME        | MISC             | rename |
-| EXEC          | PROCESSES        | exec* (all 6 variants) |
+| EXEC          | PROCESSES        | exec (all 6 variants) |
 | FORK          | PROCESSES        | fork |
 | KILL          | PROCESSES        | kill |
 | SEEK          | SEEKS            | NOT-IMPLEMENTED |
