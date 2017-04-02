@@ -77,8 +77,6 @@ of operations as one (e.g., to enable/disable monitoring).
 | LISTXATTR     | XATTRS           | listxattr, llistxattr, flistxattr |
 | REMOVEXATTR   | XATTRS           | removexattr, fremovexattr, lremovexattr |
 | SETXATTR      | XATTRS           | setxattr, lsetxattr, fsetxattr |
-| START_STOP    | START            | not a function; event is triggered if process is started |
-| START_STOP    | STOP             | not a function; event is triggered if process is stopped. Keep in mind, that this event is not intercepted when exec call is successful |
 | HTTP          | HTTP_REQ_SEND    | sent an HTTP request |
 | HTTP          | HTTP_REQ_RECV    | received an HTTP request |
 | HTTP          | HTTP_RESP_SEND   | sent an HTTP response |
