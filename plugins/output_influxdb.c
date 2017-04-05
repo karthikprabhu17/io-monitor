@@ -94,7 +94,7 @@ int is_all_whitespace(const char* s)
 
 int open_plugin(const char* plugin_config)
 {
-   //curl_global_init(CURL_GLOBAL_ALL);
+   curl_global_init(CURL_GLOBAL_ALL);
    //url = strdup(plugin_config);
    return PLUGIN_OPEN_SUCCESS;
 }

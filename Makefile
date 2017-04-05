@@ -73,7 +73,7 @@ mq_listener/%.o: mq_listener/%.cpp $(headers) mq_listener/*.h
 
 mq_listener/mq_listener: $(mq_listener_objs)
 	@echo -n  "generating executable $@ ... "
-	@g++ $(CFLAGS) $^ -o mq_listener/mq_listener -lcurl -ldl -lpthread
+	@g++ $(CFLAGS) $^ -o mq_listener/mq_listener  -ldl -lpthread
 	@echo OK
 
 #build sample plugin
@@ -84,7 +84,7 @@ plugins/input_cli.so: plugins/input_cli.c $(headers)
 
 plugins/output_influxdb.so: plugins/output_influxdb.c $(headers)
 	@echo -n  "generating plugin $@ ... (L) "
-	@cd plugins ; gcc $(CFLAGS) -lpthread -shared -fPIC ../$< -o ../$@
+	@cd plugins ; gcc $(CFLAGS) -Wl,--as-needed -lcurl -shared -fPIC   ../$< -o ../$@
 	@echo OK
 
 plugins/%.so: plugins/%.c $(headers)

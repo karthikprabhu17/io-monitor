@@ -17,6 +17,9 @@ struct plugin_chain {
   struct plugin_chain* next_plugin;
 };
 
+/**
+ * execute all the plugins within the chain. 
+ */
 int execute_plugin_chain(struct monitor_record_t *rec);
 
 void unload_all_plugins();
